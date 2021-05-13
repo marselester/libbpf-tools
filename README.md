@@ -24,8 +24,6 @@ with [bpf2go](https://github.com/cilium/ebpf/blob/master/cmd/bpf2go/doc.go) tool
 $ cd /vagrant/
 $ BPF_CFLAGS='-D__TARGET_ARCH_x86' go generate
 $ sudo go run .
-2021/05/13 21:22:33 failed to load objects: field TcpV6Connect: program tcp_v6_connect: CO-RE relocations: relocate pt_regs: relocation byte_off: not supported
-exit status 1
 ```
 
 Note, the headers were copied from the following sources.
@@ -39,10 +37,7 @@ $ git clone https://github.com/libbpf/libbpf.git
 $ cp ./libbpf/src/bpf_helper_defs.h ./headers/bpf
 ```
 
-`vmlinux.h` was generated as follows, though I also tried:
-
-- https://raw.githubusercontent.com/iovisor/bcc/master/libbpf-tools/x86/vmlinux_505.h
-- https://github.com/cilium/ebpf/commit/34f664db5ce5c6227f0afd64c4272666687c7cde
+`vmlinux.h` was generated as follows.
 
 ```sh
 $ sudo apt-get install linux-tools-common linux-tools-5.8.0-53-generic
