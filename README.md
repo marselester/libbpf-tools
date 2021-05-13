@@ -22,9 +22,9 @@ with [bpf2go](https://github.com/cilium/ebpf/blob/master/cmd/bpf2go/doc.go) tool
 
 ```sh
 $ cd /vagrant/
-$ go generate
+$ BPF_CFLAGS='-D__TARGET_ARCH_x86' go generate
 $ sudo go run .
-2021/05/13 16:57:02 failed to load objects: field TcpV6Connect: program tcp_v6_connect: instruction 0: reference to missing symbol "PT_REGS_PARM1"
+2021/05/13 21:22:33 failed to load objects: field TcpV6Connect: program tcp_v6_connect: CO-RE relocations: relocate pt_regs: relocation byte_off: not supported
 exit status 1
 ```
 
