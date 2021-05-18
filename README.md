@@ -1,7 +1,7 @@
-# Go tcpconnlat
+# Go libbpf-tools
 
 An attempt to implement a Go frontend for
-[tcpconnlat](https://github.com/iovisor/bcc/blob/master/libbpf-tools/tcpconnlat.c) BPF tool.
+[libbpf-tools](https://github.com/iovisor/bcc/tree/master/libbpf-tools).
 
 Start a virtual machine, install Clang and Go.
 

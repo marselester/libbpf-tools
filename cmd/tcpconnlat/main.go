@@ -39,6 +39,10 @@ func main() {
 	}
 	defer kp.Close()
 
+	// TODO
+	// link.Tracepoint should be used, I am waiting for https://github.com/cilium/ebpf/pull/288
+	// to support ftrace.
+
 	log.Println("Waiting for events...")
 
 	// Open a perf event reader from userspace on the PERF_EVENT_ARRAY map
@@ -61,7 +65,7 @@ func main() {
 		}
 
 		if record.LostSamples != 0 {
-			log.Printf("rind event perf buffer is full, dropped %d samples", record.LostSamples)
+			log.Printf("ring event perf buffer is full, dropped %d samples", record.LostSamples)
 			continue
 		}
 
