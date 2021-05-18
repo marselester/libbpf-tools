@@ -13,7 +13,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cflags $BPF_CFLAGS -cc clang-11 TCPConnLat ./bpf/tcpconnlat.bpf.c -- -I./headers
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go -cflags $BPF_CFLAGS -cc clang-11 TCPConnLat ./bpf/tcpconnlat.bpf.c -- -I../../headers
 
 func main() {
 	// Increase the rlimit of the current process to provide sufficient space

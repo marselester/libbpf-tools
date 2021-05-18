@@ -22,8 +22,8 @@ with [bpf2go](https://github.com/cilium/ebpf/blob/master/cmd/bpf2go/doc.go) tool
 
 ```sh
 $ cd /vagrant/
-$ BPF_CFLAGS='-D__TARGET_ARCH_x86' go generate
-$ sudo go run .
+$ BPF_CFLAGS='-D__TARGET_ARCH_x86' go generate ./cmd/tcpconnlat/
+$ sudo go run ./cmd/tcpconnlat/
 ```
 
 Note, the headers were copied from the following sources.
