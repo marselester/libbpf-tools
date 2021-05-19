@@ -3,11 +3,6 @@
 // https://github.com/iovisor/bcc/blob/master/libbpf-tools/tcpconnect.bpf.c
 //
 // Based on tcpconnect(8) from BCC by Brendan Gregg
-
-// Fix "CO-RE relocations: relocate sock: relocation byte_off: not supported" error,
-// see https://github.com/cilium/ebpf/issues/303.
-#define BPF_NO_PRESERVE_ACCESS_INDEX 0
-
 #include <vmlinux.h>
 
 #include <bpf/bpf_helpers.h>
