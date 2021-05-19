@@ -31,11 +31,29 @@ func main() {
 	}
 	defer objs.Close()
 
-	kp, err := link.Kretprobe("tcp_v4_connect", objs.TCPConnectPrograms.TcpV4ConnectRet)
+	tcpv4kp, err := link.Kprobe("tcp_v4_connect", objs.TCPConnectPrograms.TcpV4Connect)
 	if err != nil {
-		log.Fatalf("opening kretprobe: %s", err)
+		log.Fatalf("opening tcp_v4_connect kprobe: %s", err)
 	}
-	defer kp.Close()
+	defer tcpv4kp.Close()
+
+	tcpv4krp, err := link.Kretprobe("tcp_v4_connect", objs.TCPConnectPrograms.TcpV4ConnectRet)
+	if err != nil {
+		log.Fatalf("opening tcp_v4_connect kretprobe: %s", err)
+	}
+	defer tcpv4krp.Close()
+
+	tcpv6kp, err := link.Kprobe("tcp_v6_connect", objs.TCPConnectPrograms.TcpV6Connect)
+	if err != nil {
+		log.Fatalf("opening tcp_v6_connect kprobe: %s", err)
+	}
+	defer tcpv6kp.Close()
+
+	tcpv6krp, err := link.Kretprobe("tcp_v6_connect", objs.TCPConnectPrograms.TcpV6ConnectRet)
+	if err != nil {
+		log.Fatalf("opening tcp_v6_connect kretprobe: %s", err)
+	}
+	defer tcpv6krp.Close()
 
 	log.Println("Waiting for events...")
 
