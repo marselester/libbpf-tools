@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"log"
+	"net"
 	"os"
 
 	"github.com/cilium/ebpf/link"
@@ -87,25 +88,42 @@ func main() {
 			&v,
 		)
 		if err != nil {
-			log.Printf("failed to parse perf event: %v", err)
+			log.Printf("failed to parse perf event: %#+v", err)
 			continue
 		}
 
+		var (
+			srcAddr, dstAddr net.IP
+			ipVer            byte
+		)
+		switch v.AddrFam {
+		case 2:
+			srcAddr = net.IP(v.SrcAddr[:4])
+			dstAddr = net.IP(v.DstAddr[:4])
+			ipVer = 4
+		case 10:
+			srcAddr = net.IP(v.SrcAddr[:])
+			dstAddr = net.IP(v.DstAddr[:])
+			ipVer = 6
+		}
 		log.Println(v)
+		log.Printf("PID %d COMM %s IP v%d SADDR %s DADDR %s DPORT %d\n", v.PID, v.Comm, ipVer, srcAddr, dstAddr, v.DstPort)
 	}
 }
 
 // event represents a perf event sent to userspace from the BPF program running in the kernel.
 // Note, that it must match the C event struct, and both C and Go structs must be aligned the same way.
 type event struct {
-	saddrV4 uint32
-	saddrV6 [16]byte
-	daddrV4 uint32
-	daddrV6 [16]byte
-	comm    [16]byte
-	tsUs    uint64
-	af      int
-	pid     uint32
-	uid     uint32
-	dport   uint16
+	SrcAddr [16]byte
+	DstAddr [16]byte
+	Comm    [16]byte
+	// Timestamp is a timestamp in microseconds.
+	Timestamp uint64
+	// AddrFam is an address family, 2 is AF_INET (IPv4), 10 is AF_INET6 (IPv6).
+	AddrFam uint64
+	// PID is a process ID.
+	PID uint32
+	// UID is a process's user ID.
+	UID     uint32
+	DstPort uint16
 }
