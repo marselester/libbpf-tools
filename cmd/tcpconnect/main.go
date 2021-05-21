@@ -106,8 +106,7 @@ func main() {
 			dstAddr = net.IP(v.DstAddr[:])
 			ipVer = 6
 		}
-		log.Println(v)
-		log.Printf("PID %d COMM %s IP v%d SADDR %s DADDR %s DPORT %d\n", v.PID, v.Comm, ipVer, srcAddr, dstAddr, v.DstPort)
+		log.Printf("PID %d COMM %s IP %d SADDR %s DADDR %s DPORT %d\n", v.PID, v.Comm, ipVer, srcAddr, dstAddr, binary.BigEndian.Uint16(v.DstPort[:]))
 	}
 }
 
@@ -120,10 +119,12 @@ type event struct {
 	// Timestamp is a timestamp in microseconds.
 	Timestamp uint64
 	// AddrFam is an address family, 2 is AF_INET (IPv4), 10 is AF_INET6 (IPv6).
-	AddrFam uint64
+	AddrFam uint32
 	// PID is a process ID.
 	PID uint32
 	// UID is a process's user ID.
-	UID     uint32
-	DstPort uint16
+	UID uint32
+	// DstPort is a destination port (uint16 in C struct).
+	// Note, network byte order is big endian.
+	DstPort [2]byte
 }
