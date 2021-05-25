@@ -23,10 +23,10 @@ with [bpf2go](https://github.com/cilium/ebpf/blob/master/cmd/bpf2go/doc.go) tool
 ```sh
 $ cd /vagrant/
 $ BPF_CFLAGS='-D__TARGET_ARCH_x86' go generate ./cmd/tcpconnect/
-$ sudo go run ./cmd/tcpconnect/
-2021/05/21 00:19:46 Waiting for events...
-2021/05/21 00:19:48 PID 193706 COMM curl IP 4 SADDR 127.0.0.1 DADDR 127.0.0.1 DPORT 8000
-2021/05/21 00:21:39 PID 193796 COMM curl IP 6 SADDR ::1 DADDR ::1 DPORT 8000
+$ sudo go run ./cmd/tcpconnect -timestamp -uid
+TIME(s)  UID   PID    COMM         IP SADDR            DADDR            DPORT
+0.000    1000  240332 curl         6  ::1              ::1              8000
+3.079    1000  240334 curl         4  127.0.0.1        127.0.0.1        8000
 ```
 
 Note, the headers were copied from the following sources.
