@@ -50,8 +50,3 @@ $ bpftool btf dump file /sys/kernel/btf/vmlinux format c > ./headers/vmlinux.h
 Set `#define BPF_NO_PRESERVE_ACCESS_INDEX 0` before importing `vmlinux.h`
 in `tcpconnlat.bpf.c` to resolve
 `CO-RE relocations: relocate pt_regs: relocation byte_off: not supported` error.
-
-The `tcpconnect` needs these PRs to work:
-
-- https://github.com/cilium/ebpf/pull/310
-- https://github.com/cilium/ebpf/pull/301
