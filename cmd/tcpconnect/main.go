@@ -46,7 +46,9 @@ func main() {
 
 	var (
 		printTimestamp = flag.Bool("timestamp", false, "include the time of the connect in seconds on output, counting from the first event seen")
-		printUID       = flag.Bool("uid", false, "include UID on output")
+		printUID       = flag.Bool("print-uid", false, "include UID on output")
+		filterUID      = flag.Int("uid", -1, "trace this UID only")
+		filterPID      = flag.Int("pid", 0, "trace this PID only")
 	)
 	flag.Parse()
 
@@ -60,8 +62,26 @@ func main() {
 		return
 	}
 
+	// Replace constants in the BPF C program to filter connections by PID or UID.
+	spec, err := LoadTCPConnect()
+	if err != nil {
+		log.Printf("failed to load collection spec: %v", err)
+		return
+	}
+	bpfConst := make(map[string]interface{})
+	if *filterUID > -1 {
+		bpfConst["filter_uid"] = uint32(*filterUID)
+	}
+	if *filterPID > 0 {
+		bpfConst["filter_pid"] = int32(*filterPID)
+	}
+	if err := spec.RewriteConstants(bpfConst); err != nil {
+		log.Printf("failed to rewrite constants: %v", err)
+		return
+	}
+
 	objs := TCPConnectObjects{}
-	if err := LoadTCPConnectObjects(&objs, nil); err != nil {
+	if err := spec.LoadAndAssign(&objs, nil); err != nil {
 		log.Printf("failed to load objects: %v", err)
 		return
 	}

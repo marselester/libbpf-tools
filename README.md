@@ -23,7 +23,7 @@ with [bpf2go](https://github.com/cilium/ebpf/blob/master/cmd/bpf2go/doc.go) tool
 ```sh
 $ cd /vagrant/
 $ BPF_CFLAGS='-D__TARGET_ARCH_x86' go generate ./cmd/tcpconnect/
-$ sudo go run ./cmd/tcpconnect -timestamp -uid
+$ sudo go run ./cmd/tcpconnect -timestamp -print-uid
 TIME(s)  UID   PID    COMM         IP SADDR            DADDR            DPORT
 0.000    1000  240332 curl         6  ::1              ::1              8000
 3.079    1000  240334 curl         4  127.0.0.1        127.0.0.1        8000
