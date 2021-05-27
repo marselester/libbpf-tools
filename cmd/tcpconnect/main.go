@@ -20,19 +20,14 @@ This works by tracing the tcp_v4_connect() and tcp_v6_connect() kernel functions
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
+	"context"
 	"flag"
-	"fmt"
-	"io"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/cilium/ebpf/link"
-	"github.com/cilium/ebpf/perf"
 	"golang.org/x/sys/unix"
 )
 
@@ -47,6 +42,7 @@ func main() {
 	var (
 		printTimestamp = flag.Bool("timestamp", false, "include the time of the connect in seconds on output, counting from the first event seen")
 		printUID       = flag.Bool("print-uid", false, "include UID on output")
+		printCount     = flag.Bool("count", false, "count connects per source IP and destination IP/port")
 		filterUID      = flag.Int("uid", -1, "trace this UID only")
 		filterPID      = flag.Int("pid", 0, "trace this PID only")
 	)
@@ -62,13 +58,17 @@ func main() {
 		return
 	}
 
-	// Replace constants in the BPF C program to filter connections by PID or UID.
 	spec, err := LoadTCPConnect()
 	if err != nil {
 		log.Printf("failed to load collection spec: %v", err)
 		return
 	}
+
+	// Replace constants in the BPF C program to filter connections by PID or UID.
 	bpfConst := make(map[string]interface{})
+	if *printCount {
+		bpfConst["do_count"] = *printCount
+	}
 	if *filterUID > -1 {
 		bpfConst["filter_uid"] = uint32(*filterUID)
 	}
@@ -115,124 +115,41 @@ func main() {
 	}
 	defer tcpv6krp.Close()
 
-	// Open a perf event reader from userspace on the PERF_EVENT_ARRAY map
-	// defined in the BPF C program.
-	rd, err := perf.NewReader(objs.TCPConnectMaps.Events, os.Getpagesize())
-	if err != nil {
-		log.Printf("creating perf event reader: %s", err)
-		return
-	}
-	defer rd.Close()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sig
-		rd.Close()
-	}()
-
-	printHeader(os.Stdout, *printTimestamp, *printUID)
-
-	var startTimestamp float64
-	for {
-		record, err := rd.Read()
-		if err != nil {
-			if perf.IsClosed(err) {
-				break
-			}
-			log.Printf("reading from perf event reader: %v", err)
-		}
-
-		if record.LostSamples != 0 {
-			log.Printf("ring event perf buffer is full, dropped %d samples", record.LostSamples)
-			continue
-		}
-
-		var e event
-		err = binary.Read(
-			bytes.NewBuffer(record.RawSample),
-			binary.LittleEndian,
-			&e,
+	if *printCount {
+		var (
+			ipv4key   ipv4FlowKey
+			ipv4value uint64
 		)
-		if err != nil {
-			log.Printf("failed to parse perf event: %#+v", err)
-			continue
+		entries := objs.TCPConnectMaps.Ipv4Count.Iterate()
+		for entries.Next(&ipv4key, &ipv4value) {
+			log.Println(ipv4key, ipv4value)
+		}
+		if err := entries.Err(); err != nil {
+			panic(err)
 		}
 
-		if startTimestamp == 0 {
-			startTimestamp = float64(e.Timestamp)
+		var (
+			ipv6key   ipv6FlowKey
+			ipv6value uint64
+		)
+		entries = objs.TCPConnectMaps.Ipv6Count.Iterate()
+		for entries.Next(&ipv6key, &ipv6value) {
+			log.Println(ipv6key, ipv6value)
 		}
-
-		printEvent(os.Stdout, &e, startTimestamp, *printTimestamp, *printUID)
+		if err := entries.Err(); err != nil {
+			panic(err)
+		}
+		// if err := objs.TCPConnectMaps.Ipv4Count.Lookup(&key, &value); err != nil {
+		// 	log.Printf("failed to read IP v4 map: %s", err)
+		// 	return
+		// }
+	} else {
+		printEvents(ctx, objs.TCPConnectMaps.Events, *printTimestamp, *printUID)
 	}
 
 	// The program terminates successfully if it received INT/TERM signal.
 	exitCode = 0
-}
-
-// event represents a perf event sent to userspace from the BPF program running in the kernel.
-// Note, that it must match the C event struct, and both C and Go structs must be aligned the same way.
-type event struct {
-	// SrcAddr is the source address.
-	SrcAddr [16]byte
-	// DstAddr is the destination address.
-	DstAddr [16]byte
-	// Comm is the process name that opened the connection.
-	Comm [16]byte
-	// Timestamp is the timestamp in microseconds.
-	Timestamp uint64
-	// AddrFam is the address family, 2 is AF_INET (IPv4), 10 is AF_INET6 (IPv6).
-	AddrFam uint32
-	// PID is the process ID that opened the connection.
-	PID uint32
-	// UID is the process user ID.
-	UID uint32
-	// DstPort is the destination port (uint16 in C struct).
-	// Note, network byte order is big endian.
-	DstPort [2]byte
-}
-
-func printHeader(w io.Writer, printTimestamp, printUID bool) {
-	if printTimestamp {
-		fmt.Fprintf(w, "%-9s", "TIME(s)")
-	}
-	if printUID {
-		fmt.Fprintf(w, "%-6s", "UID")
-	}
-	fmt.Fprintf(w, "%-6s %-12s %-2s %-16s %-16s %s\n", "PID", "COMM", "IP", "SADDR", "DADDR", "DPORT")
-}
-
-func printEvent(w io.Writer, e *event, startTimestamp float64, printTimestamp, printUID bool) {
-	var (
-		srcAddr, dstAddr net.IP
-		ipVer            byte
-	)
-	switch e.AddrFam {
-	case 2:
-		srcAddr = net.IP(e.SrcAddr[:4])
-		dstAddr = net.IP(e.DstAddr[:4])
-		ipVer = 4
-	case 10:
-		srcAddr = net.IP(e.SrcAddr[:])
-		dstAddr = net.IP(e.DstAddr[:])
-		ipVer = 6
-	}
-
-	if printTimestamp {
-		fmt.Fprintf(w, "%-9.3f", (float64(e.Timestamp)-startTimestamp)/1e6)
-	}
-	if printUID {
-		fmt.Fprintf(w, "%-6d", e.UID)
-	}
-
-	fmt.Fprintf(
-		w,
-		"%-6d %-12s %-2d %-16s %-16s %d\n",
-		e.PID,
-		bytes.TrimRight(e.Comm[:], "\x00"),
-		ipVer,
-		srcAddr,
-		dstAddr,
-		binary.BigEndian.Uint16(e.DstPort[:]),
-	)
 }
