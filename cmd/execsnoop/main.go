@@ -121,9 +121,9 @@ type event struct {
 	TGID      int32
 	PPID      int32
 	UID       uint32
-	Retval    int
-	ArgsCount int
-	ArgsSize  uint
+	Retval    int32
+	ArgsCount int32
+	ArgsSize  uint32
 	// TOTAL_MAX_ARGS * ARGSIZE
 	Args [7680]byte
 }

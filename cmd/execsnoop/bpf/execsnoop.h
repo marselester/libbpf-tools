@@ -21,9 +21,9 @@ struct event {
 	pid_t tgid;
 	pid_t ppid;
 	uid_t uid;
-	int retval;
-	int args_count;
-	unsigned int args_size;
+	int32 retval;
+	int32 args_count;
+	u32 args_size;
 	char args[FULL_MAX_ARGS_ARR];
 };
 
