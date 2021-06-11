@@ -94,7 +94,7 @@ func main() {
 			continue
 		}
 
-		fmt.Println(e)
+		fmt.Printf("%s %+v\n", e.Comm, e)
 	}
 
 	// The program terminates successfully if it received INT/TERM signal.
@@ -116,14 +116,14 @@ func main() {
 // 	/* last cacheline: 44 bytes */
 // };
 type event struct {
-	Comm      [16]byte
-	PID       int32
-	TGID      int32
-	PPID      int32
-	UID       uint32
-	Retval    int32
-	ArgsCount int32
-	ArgsSize  uint32
-	// TOTAL_MAX_ARGS * ARGSIZE
-	Args [7680]byte
+	Comm   [16]byte
+	PID    int32
+	TGID   int32
+	PPID   int32
+	UID    uint32
+	Retval int32
+	// ArgsCount int32
+	// ArgsSize uint32
+	// // TOTAL_MAX_ARGS * ARGSIZE
+	// Args [7680]byte
 }
