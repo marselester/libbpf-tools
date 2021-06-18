@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/cilium/ebpf/link"
@@ -60,7 +61,6 @@ func main() {
 		log.Printf("creating perf event reader: %s", err)
 		return
 	}
-	defer rd.Close()
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
@@ -94,7 +94,11 @@ func main() {
 			continue
 		}
 
-		fmt.Printf("%s %+v\n", e.Comm, e)
+		fmt.Printf(
+			"%+v %s\n",
+			e,
+			strings.ReplaceAll(string(record.RawSample[44:]), "\x00", " "),
+		)
 	}
 
 	// The program terminates successfully if it received INT/TERM signal.
@@ -116,14 +120,12 @@ func main() {
 // 	/* last cacheline: 44 bytes */
 // };
 type event struct {
-	Comm   [16]byte
-	PID    int32
-	TGID   int32
-	PPID   int32
-	UID    uint32
-	Retval int32
-	// ArgsCount int32
-	// ArgsSize uint32
-	// // TOTAL_MAX_ARGS * ARGSIZE
-	// Args [7680]byte
+	Comm      [16]byte
+	PID       int32
+	TGID      int32
+	PPID      int32
+	UID       uint32
+	Retval    int32
+	ArgsCount int32
+	ArgsSize  uint32
 }

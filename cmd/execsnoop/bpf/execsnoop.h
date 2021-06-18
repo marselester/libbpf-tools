@@ -22,9 +22,9 @@ struct event {
 	pid_t ppid;
 	uid_t uid;
 	int32 retval;
-	// int32 args_count;
-	// u32 args_size;
-	// char args[FULL_MAX_ARGS_ARR];
+	int32 args_count;
+	u32 args_size;
+	char args[FULL_MAX_ARGS_ARR];
 };
 
 #endif /* __EXECSNOOP_H */

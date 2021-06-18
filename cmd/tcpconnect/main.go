@@ -122,7 +122,6 @@ func main() {
 		log.Printf("creating perf event reader: %s", err)
 		return
 	}
-	defer rd.Close()
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
