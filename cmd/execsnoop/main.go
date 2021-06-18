@@ -1,14 +1,42 @@
+// +build linux
+
+/*
+Program execsnoop is a BCC tool created by Brendan Gregg and others
+to trace new process execution via execve() syscalls,
+see https://github.com/iovisor/bcc/blob/master/libbpf-tools.
+It can find issues of short-lived processes that consume CPU resources and
+can also be used to debug software execution, including application start scripts.
+For example, perturbations from background jobs, slow of failing application startup,
+slow or failing container startup.
+Check out examples https://github.com/iovisor/bcc/blob/master/tools/execsnoop_example.txt.
+
+	PCOMM: The parent process/command name, e.g., bash.
+	PID: The process ID.
+	RET: The return value of the execve().
+	ARGS: The filename with arguments.
+	TIME: The time of the event (HH:MM:SS).
+	TIME(s): The time of the event in seconds, counting from the first event seen.
+	UID: The process user ID.
+
+The tool catches new processes that follow the fork->exec sequence,
+as well as processes that re-exec() themselves.
+Some applications fork() but do not exec(), e.g., for worker processes,
+which won't be included in the execsnoop output.
+
+Since the rate of process execution is expected to be low (<1000/second),
+the overhead is negligible.
+*/
 package main
 
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
+	"flag"
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
+	"time"
 
 	"github.com/cilium/ebpf/link"
 	"github.com/cilium/ebpf/perf"
@@ -22,6 +50,13 @@ func main() {
 	// there are more failure scenarios to begin with.
 	exitCode := 1
 	defer func() { os.Exit(exitCode) }()
+
+	var (
+		printTime      = flag.Bool("time", false, "include the time of the event on output (HH:MM:SS)")
+		printTimestamp = flag.Bool("timestamp", false, "include the time of the event in seconds on output, counting from the first event seen")
+		printUID       = flag.Bool("print-uid", false, "include UID on output")
+	)
+	flag.Parse()
 
 	// Increase the rlimit of the current process to provide sufficient space
 	// for locking memory for the eBPF map.
@@ -69,6 +104,9 @@ func main() {
 		rd.Close()
 	}()
 
+	printHeader(os.Stdout, *printTime, *printTimestamp, *printUID)
+
+	startTime := time.Now()
 	for {
 		record, err := rd.Read()
 		if err != nil {
@@ -94,38 +132,9 @@ func main() {
 			continue
 		}
 
-		fmt.Printf(
-			"%+v %s\n",
-			e,
-			strings.ReplaceAll(string(record.RawSample[44:]), "\x00", " "),
-		)
+		printEvent(os.Stdout, &e, record.RawSample[eventSize:], startTime, *printTime, *printTimestamp, *printUID)
 	}
 
 	// The program terminates successfully if it received INT/TERM signal.
 	exitCode = 0
-}
-
-// pahole -C 'event' ./cmd/execsnoop/execsnoop_bpfel.o
-// struct event {
-// 	char                       comm[16];             /*     0    16 */
-// 	pid_t                      pid;                  /*    16     4 */
-// 	pid_t                      tgid;                 /*    20     4 */
-// 	pid_t                      ppid;                 /*    24     4 */
-// 	uid_t                      uid;                  /*    28     4 */
-// 	int                        retval;               /*    32     4 */
-// 	int                        args_count;           /*    36     4 */
-// 	unsigned int               args_size;            /*    40     4 */
-// 	char                       args[7680];           /*    44  7680 */
-// 	/* size: 7724, cachelines: 121, members: 9 */
-// 	/* last cacheline: 44 bytes */
-// };
-type event struct {
-	Comm      [16]byte
-	PID       int32
-	TGID      int32
-	PPID      int32
-	UID       uint32
-	Retval    int32
-	ArgsCount int32
-	ArgsSize  uint32
 }
