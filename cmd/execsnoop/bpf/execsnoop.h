@@ -16,14 +16,13 @@ https://github.com/iovisor/bcc/blob/master/libbpf-tools/execsnoop.h
 #define LAST_ARG (FULL_MAX_ARGS_ARR - ARGSIZE)
 
 struct event {
-	char comm[TASK_COMM_LEN];
 	pid_t pid;
-	pid_t tgid;
 	pid_t ppid;
 	uid_t uid;
 	int32 retval;
 	int32 args_count;
 	u32 args_size;
+	char comm[TASK_COMM_LEN];
 	char args[FULL_MAX_ARGS_ARR];
 };
 

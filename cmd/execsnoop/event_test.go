@@ -1,5 +1,3 @@
-// +build linux
-
 package main
 
 import (
@@ -22,14 +20,13 @@ func TestPrintHeader(t *testing.T) {
 func TestPrintEvent(t *testing.T) {
 	b := bytes.Buffer{}
 	e := event{
-		Comm:      [16]byte{108, 115, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		PID:       573609,
-		TGID:      573609,
 		PPID:      46917,
 		UID:       1000,
 		Retval:    0,
 		ArgsCount: 3,
 		ArgsSize:  30,
+		Comm:      [16]byte{108, 115, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	}
 	args := []byte{108, 115, 0, 45, 45, 99, 111, 108, 111, 114, 61, 97, 117, 116, 111, 0, 45, 108, 97, 104, 0, 0, 0}
 	printEvent(&b, &e, args, time.Now(), false, false, true)
