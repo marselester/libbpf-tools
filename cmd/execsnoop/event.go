@@ -10,17 +10,14 @@ import (
 
 // The event struct size in bytes, i.e., unsafe.Sizeof(e).
 // It's used to obtain the variable length args from the perf record.
-const eventSize = 44
+const eventSize = 40
 
-// event represents a perf event sent to userspace from the BPF program running in the kernel.
+// event represents a perf event sent to user space from the BPF program running in the kernel.
 // Note, that it must match the C event struct, and both C and Go structs must be aligned the same way.
+// The variable length args field is omitted here and decoded manually.
 type event struct {
-	// Comm is the parent process/command name, e.g., bash.
-	Comm [16]byte
 	// PID is the process ID.
 	PID int32
-	// TGID is thread group ID.
-	TGID int32
 	// PPID is the process ID of the parent of this process.
 	PPID int32
 	// UID is the process user ID, e.g., 1000.
@@ -31,6 +28,8 @@ type event struct {
 	ArgsCount int32
 	// ArgSize is a size of arguments in bytes.
 	ArgsSize uint32
+	// Comm is the parent process/command name, e.g., bash.
+	Comm [16]byte
 }
 
 func printHeader(w io.Writer, printTime, printTimestamp, printUID bool) {

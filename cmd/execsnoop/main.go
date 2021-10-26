@@ -1,4 +1,4 @@
-// +build linux
+//go:build linux
 
 /*
 Program execsnoop is a BCC tool created by Brendan Gregg and others
@@ -58,42 +58,46 @@ func main() {
 	)
 	flag.Parse()
 
-	// Increase the rlimit of the current process to provide sufficient space
-	// for locking memory for the eBPF map.
+	// Increase the resource limit of the current process to provide sufficient space
+	// for locking memory for the BPF maps.
 	if err := unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{
 		Cur: unix.RLIM_INFINITY,
 		Max: unix.RLIM_INFINITY,
 	}); err != nil {
-		log.Printf("failed to set temporary rlimit: %v", err)
+		log.Printf("failed to set temporary RLIMIT_MEMLOCK: %v", err)
 		return
 	}
 
+	// Load the BPF program into the kernel from an ELF.
+	// ExecSnoopObjects contains all objects (BPF programs and maps) after they have been loaded into the kernel:
+	// TracepointSyscallsSysEnterExecve and TracepointSyscallsSysExitExecve BPF programs,
+	// Events and Execs BPF maps.
 	objs := ExecSnoopObjects{}
 	if err := LoadExecSnoopObjects(&objs, nil); err != nil {
-		log.Printf("failed to load objects: %v", err)
+		log.Printf("failed to load BPF programs and maps: %v", err)
 		return
 	}
 	defer objs.Close()
 
 	tpEnter, err := link.Tracepoint("syscalls", "sys_enter_execve", objs.ExecSnoopPrograms.TracepointSyscallsSysEnterExecve)
 	if err != nil {
-		log.Printf("failed to open tracepoint: %v", err)
+		log.Printf("failed to attach the BPF program to sys_enter_execve tracepoint: %v", err)
 		return
 	}
 	defer tpEnter.Close()
 
 	tpExit, err := link.Tracepoint("syscalls", "sys_exit_execve", objs.ExecSnoopPrograms.TracepointSyscallsSysExitExecve)
 	if err != nil {
-		log.Printf("failed to open tracepoint: %v", err)
+		log.Printf("failed to attach the BPF program to sys_exit_execve tracepoint: %v", err)
 		return
 	}
 	defer tpExit.Close()
 
-	// Open a perf event reader from userspace on the PERF_EVENT_ARRAY map
+	// Open a perf event reader from user space on the PERF_EVENT_ARRAY map
 	// defined in the BPF C program.
 	rd, err := perf.NewReader(objs.ExecSnoopMaps.Events, os.Getpagesize())
 	if err != nil {
-		log.Printf("creating perf event reader: %s", err)
+		log.Printf("failed to create perf event reader: %v", err)
 		return
 	}
 
@@ -113,7 +117,7 @@ func main() {
 			if perf.IsClosed(err) {
 				break
 			}
-			log.Printf("reading from perf event reader: %v", err)
+			log.Printf("failed to read from perf ring buffer: %v", err)
 		}
 
 		if record.LostSamples != 0 {
