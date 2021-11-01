@@ -1,4 +1,4 @@
-// +build linux
+//go:build linux
 
 /*
 Program tcpconnect is a BCC tool created by Brendan Gregg and Anton Protopopov
@@ -52,13 +52,13 @@ func main() {
 	)
 	flag.Parse()
 
-	// Increase the rlimit of the current process to provide sufficient space
-	// for locking memory for the eBPF map.
+	// Increase the resource limit of the current process to provide sufficient space
+	// for locking memory for the BPF maps.
 	if err := unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{
 		Cur: unix.RLIM_INFINITY,
 		Max: unix.RLIM_INFINITY,
 	}); err != nil {
-		log.Printf("failed to set temporary rlimit: %v", err)
+		log.Printf("failed to set temporary RLIMIT_MEMLOCK: %v", err)
 		return
 	}
 
@@ -80,37 +80,41 @@ func main() {
 		return
 	}
 
+	// Load the BPF program into the kernel from an ELF.
+	// TCPConnectObjects contains all objects (BPF programs and maps) after they have been loaded into the kernel:
+	// - TcpV4Connect, TcpV4ConnectRet, TcpV6Connect, TcpV6ConnectRet BPF programs,
+	// - Events, Ipv4Count, Ipv6Count, Sockets BPF maps.
 	objs := TCPConnectObjects{}
 	if err := spec.LoadAndAssign(&objs, nil); err != nil {
-		log.Printf("failed to load objects: %v", err)
+		log.Printf("failed to load BPF programs and maps: %v", err)
 		return
 	}
 	defer objs.Close()
 
 	tcpv4kp, err := link.Kprobe("tcp_v4_connect", objs.TCPConnectPrograms.TcpV4Connect)
 	if err != nil {
-		log.Printf("opening tcp_v4_connect kprobe: %s", err)
+		log.Printf("failed to attach the BPF program to tcp_v4_connect kprobe: %s", err)
 		return
 	}
 	defer tcpv4kp.Close()
 
 	tcpv4krp, err := link.Kretprobe("tcp_v4_connect", objs.TCPConnectPrograms.TcpV4ConnectRet)
 	if err != nil {
-		log.Printf("opening tcp_v4_connect kretprobe: %s", err)
+		log.Printf("failed to attach the BPF program to tcp_v4_connect kretprobe: %s", err)
 		return
 	}
 	defer tcpv4krp.Close()
 
 	tcpv6kp, err := link.Kprobe("tcp_v6_connect", objs.TCPConnectPrograms.TcpV6Connect)
 	if err != nil {
-		log.Printf("opening tcp_v6_connect kprobe: %s", err)
+		log.Printf("failed to attach the BPF program to tcp_v6_connect kprobe: %s", err)
 		return
 	}
 	defer tcpv6kp.Close()
 
 	tcpv6krp, err := link.Kretprobe("tcp_v6_connect", objs.TCPConnectPrograms.TcpV6ConnectRet)
 	if err != nil {
-		log.Printf("opening tcp_v6_connect kretprobe: %s", err)
+		log.Printf("failed to attach the BPF program to tcp_v6_connect kretprobe: %s", err)
 		return
 	}
 	defer tcpv6krp.Close()
@@ -119,7 +123,7 @@ func main() {
 	// defined in the BPF C program.
 	rd, err := perf.NewReader(objs.TCPConnectMaps.Events, os.Getpagesize())
 	if err != nil {
-		log.Printf("creating perf event reader: %s", err)
+		log.Printf("failed to create perf event reader: %v", err)
 		return
 	}
 
@@ -139,7 +143,7 @@ func main() {
 			if perf.IsClosed(err) {
 				break
 			}
-			log.Printf("reading from perf event reader: %v", err)
+			log.Printf("failed to read from perf ring buffer: %v", err)
 		}
 
 		if record.LostSamples != 0 {
@@ -187,7 +191,7 @@ type event struct {
 	// UID is the process user ID.
 	UID uint32
 	// DstPort is the destination port (uint16 in C struct).
-	// Note, network byte order is big endian.
+	// Note, network byte order is big-endian.
 	DstPort [2]byte
 }
 
