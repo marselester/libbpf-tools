@@ -1,7 +1,11 @@
 # Go libbpf-tools
 
 An attempt to implement a Go frontend for
-[libbpf-tools](https://github.com/iovisor/bcc/tree/master/libbpf-tools).
+[libbpf-tools](https://github.com/iovisor/bcc/tree/master/libbpf-tools)
+narrated in blog posts:
+
+- [BPF: Go frontend for execsnoop](https://marselester.com/bpf-go-frontend-for-execsnoop.html)
+- [BPF: Go frontend for tcpconnect](https://marselester.com/bpf-go-frontend-for-tcpconnect.html)
 
 Start a virtual machine, install Clang and Go.
 
