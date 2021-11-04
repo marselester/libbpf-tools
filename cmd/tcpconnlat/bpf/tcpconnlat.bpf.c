@@ -52,8 +52,8 @@ static __always_inline int trace_connect(struct sock *sk)
 	return 0;
 }
 
-SEC("fentry/tcp_v4_connect")
-int BPF_PROG(tcp_v4_connect, struct sock *sk)
+SEC("kprobe/tcp_v4_connect")
+int BPF_KPROBE(tcp_v4_connect, struct sock *sk)
 {
 	return trace_connect(sk);
 }
@@ -64,8 +64,8 @@ int BPF_KPROBE(tcp_v6_connect, struct sock *sk)
 	return trace_connect(sk);
 }
 
-SEC("fentry/tcp_rcv_state_process")
-int BPF_PROG(tcp_rcv_state_process, struct sock *sk)
+SEC("kprobe/tcp_rcv_state_process")
+int BPF_KPROBE(tcp_rcv_state_process, struct sock *sk)
 {
 	struct piddata *piddatap;
 	struct event event = {};
