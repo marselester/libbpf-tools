@@ -50,7 +50,3 @@ $ cp ./libbpf/src/bpf_helper_defs.h ./headers/bpf
 $ sudo apt-get install linux-tools-common linux-tools-5.8.0-53-generic
 $ bpftool btf dump file /sys/kernel/btf/vmlinux format c > ./headers/vmlinux.h
 ```
-
-Set `#define BPF_NO_PRESERVE_ACCESS_INDEX 0` before importing `vmlinux.h`
-in `tcpconnlat.bpf.c` to resolve
-`CO-RE relocations: relocate pt_regs: relocation byte_off: not supported` error.
