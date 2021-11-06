@@ -1,11 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 // Copyright (c) 2020 Wenbo Zhang
 // https://github.com/iovisor/bcc/blob/master/libbpf-tools/tcpconnlat.bpf.c
-
-// Fix "CO-RE relocations: relocate pt_regs: relocation byte_off: not supported" error,
-// see https://github.com/cilium/ebpf/issues/303.
-#define BPF_NO_PRESERVE_ACCESS_INDEX 0
-
 #include <vmlinux.h>
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_core_read.h>
@@ -52,8 +47,8 @@ static __always_inline int trace_connect(struct sock *sk)
 	return 0;
 }
 
-SEC("kprobe/tcp_v4_connect")
-int BPF_KPROBE(tcp_v4_connect, struct sock *sk)
+SEC("fentry/tcp_v4_connect")
+int BPF_PROG(tcp_v4_connect, struct sock *sk)
 {
 	return trace_connect(sk);
 }
@@ -64,8 +59,8 @@ int BPF_KPROBE(tcp_v6_connect, struct sock *sk)
 	return trace_connect(sk);
 }
 
-SEC("kprobe/tcp_rcv_state_process")
-int BPF_KPROBE(tcp_rcv_state_process, struct sock *sk)
+SEC("fentry/tcp_rcv_state_process")
+int BPF_PROG(tcp_rcv_state_process, struct sock *sk)
 {
 	struct piddata *piddatap;
 	struct event event = {};
