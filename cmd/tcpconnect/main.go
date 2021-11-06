@@ -173,7 +173,7 @@ func main() {
 	exitCode = 0
 }
 
-// event represents a perf event sent to userspace from the BPF program running in the kernel.
+// event represents a perf event sent to user space from the BPF program running in the kernel.
 // Note, that it must match the C event struct, and both C and Go structs must be aligned the same way.
 type event struct {
 	// SrcAddr is the source address.
