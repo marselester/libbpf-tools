@@ -20,7 +20,7 @@ struct event {
 	__u64 delta_us;
 	__u64 ts_us;
 	__u32 tgid;
-	int af;
+	__u32 af;
 	__u16 dport;
 };
 
