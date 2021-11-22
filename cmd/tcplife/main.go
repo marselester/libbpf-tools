@@ -75,7 +75,7 @@ func main() {
 			continue
 		}
 
-		fmt.Println(record.RawSample)
+		fmt.Printf("%s", record.RawSample)
 	}
 
 	// The program terminates successfully if it received INT/TERM signal.

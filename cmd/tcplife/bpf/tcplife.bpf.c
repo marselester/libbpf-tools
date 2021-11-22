@@ -220,8 +220,9 @@ int trace_inet_sock_set_state(struct inet_sock_state_ctx *args)
     */
     struct event e = {};
     e.span_us = delta_us;
-    e.rx_b = rx_b;
-    e.tx_b = tx_b;
+    // FIXME: once rx_b or tx_b is accessed the program fails. Perhaps it's something wrong with tp.
+    // e.rx_b = rx_b;
+    // e.tx_b = tx_b;
     e.ts_us = bpf_ktime_get_ns() / 1000;
     e.pid = pid;
     e.dport = dport;
@@ -243,3 +244,5 @@ int trace_inet_sock_set_state(struct inet_sock_state_ctx *args)
 
     return 0;
 }
+
+char LICENSE[] SEC("license") = "GPL";
