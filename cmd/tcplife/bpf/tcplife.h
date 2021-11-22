@@ -16,13 +16,14 @@ struct event {
 		__u8 daddr_v6[16];
 	};
 	char task[TASK_COMM_LEN];
-    __u64 ports;
+    // __u64 ports;
 	__u64 rx_b;
 	__u64 tx_b;
 	__u64 span_us;
 	__u64 ts_us;
 	__u32 pid;
 	__u32 af;
+	__u16 lport;
 	__u16 dport;
 };
 
