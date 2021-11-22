@@ -22,6 +22,7 @@ struct event {
 	__u64 span_us;
 	__u64 ts_us;
 	__u32 pid;
+	__u32 af;
 	__u16 dport;
 };
 

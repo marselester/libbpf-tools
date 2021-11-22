@@ -226,6 +226,7 @@ int trace_inet_sock_set_state(struct inet_sock_state_ctx *args)
     e.tx_b = tx_b;
     e.ts_us = bpf_ktime_get_ns() / 1000;
     e.pid = pid;
+    e.af = args->family;
     e.dport = dport;
     if (args->family == AF_INET) {
         BPF_CORE_READ_INTO(&e.saddr_v4, sk, __sk_common.skc_rcv_saddr);
@@ -234,9 +235,13 @@ int trace_inet_sock_set_state(struct inet_sock_state_ctx *args)
         BPF_CORE_READ_INTO(&e.saddr_v6, sk, __sk_common.skc_v6_rcv_saddr.in6_u.u6_addr32);
         BPF_CORE_READ_INTO(&e.daddr_v6, sk, __sk_common.skc_v6_daddr.in6_u.u6_addr32);
     }
-    // a workaround until data6 compiles with separate lport/dport
+    // a workaround until the event compiles with separate lport/dport
     e.ports = dport + ((0ULL + lport) << 32);
-    bpf_get_current_comm(e.task, sizeof(e.task));
+    if (mep == 0) {
+        bpf_get_current_comm(e.task, sizeof(e.task));
+    } else {
+        bpf_probe_read_kernel(&e.task, sizeof(e.task), (void *)mep->task);
+    }
     bpf_perf_event_output(args, &events, BPF_F_CURRENT_CPU, &e, sizeof(e));
 
     if (mep != 0)
