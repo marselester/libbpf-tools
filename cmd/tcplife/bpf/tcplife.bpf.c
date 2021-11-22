@@ -59,6 +59,21 @@ struct id_t {
     char task[TASK_COMM_LEN];
 };
 
+struct inet_sock_state_ctx {
+    u64 __pad; // First 8 bytes are not accessible by bpf code.
+    const void * skaddr;
+    int oldstate;
+    int newstate;
+    __u16 sport;
+    __u16 dport;
+    __u16 family;
+    __u16 protocol;
+    __u8 saddr[4];
+    __u8 daddr[4];
+    __u8 saddr_v6[16];
+    __u8 daddr_v6[16];
+};
+
 // BPF_HASH(whoami, struct sock *, struct id_t);
 struct {
     __uint(type, BPF_MAP_TYPE_HASH);
@@ -70,7 +85,7 @@ struct {
 
 // TRACEPOINT_PROBE(sock, inet_sock_set_state)
 SEC("tracepoint/sock/inet_sock_set_state")
-int tracepoint__sock__sock_set_state(struct inet_sock_state_ctx *args)
+int trace_inet_sock_set_state(struct inet_sock_state_ctx *args)
 {
     if (args->protocol != IPPROTO_TCP)
         return 0;
