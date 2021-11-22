@@ -176,8 +176,10 @@ int trace_inet_sock_set_state(struct inet_sock_state_ctx *args)
     // get throughput stats. see tcp_get_info().
     u64 rx_b = 0, tx_b = 0, sport = 0;
     struct tcp_sock *tp = (struct tcp_sock *)sk;
-    rx_b = tp->bytes_received;
-    tx_b = tp->bytes_acked;
+    // rx_b = tp->bytes_received;
+    // tx_b = tp->bytes_acked;
+    bpf_probe_read_kernel(&rx_b, sizeof(rx_b), (void *)&tp->bytes_received);
+    bpf_probe_read_kernel(&tx_b, sizeof(tx_b), (void *)&tp->bytes_acked);
 
     /*
     if (args->family == AF_INET) {
@@ -220,9 +222,8 @@ int trace_inet_sock_set_state(struct inet_sock_state_ctx *args)
     */
     struct event e = {};
     e.span_us = delta_us;
-    // FIXME: once rx_b or tx_b is accessed the program fails. Perhaps it's something wrong with tp.
-    // e.rx_b = rx_b;
-    // e.tx_b = tx_b;
+    e.rx_b = rx_b;
+    e.tx_b = tx_b;
     e.ts_us = bpf_ktime_get_ns() / 1000;
     e.pid = pid;
     e.dport = dport;
