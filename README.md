@@ -6,6 +6,7 @@ narrated in blog posts:
 
 - [BPF: Go frontend for execsnoop](https://marselester.com/bpf-go-frontend-for-execsnoop.html)
 - [BPF: Go frontend for tcpconnect](https://marselester.com/bpf-go-frontend-for-tcpconnect.html)
+- [BPF Go program in Kubernetes](https://marselester.com/bpf-go-program-in-kubernetes.html)
 
 Start a virtual machine, install Clang and Go.
 
