@@ -21,4 +21,5 @@ COPY --from=build \
     /opt/libbpf-tools/execsnoop \
     /opt/libbpf-tools/tcpconnect \
     /opt/libbpf-tools/tcpconnlat \
+    /opt/libbpf-tools/tcplife \
     ./
